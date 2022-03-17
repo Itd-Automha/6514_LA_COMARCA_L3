@@ -1,24 +1,23 @@
 {
   "format": 1,
   "restore": {
-    "D:\\Sviluppo_Automha\\LA_COMARCA_L3\\LaComarca.Plugin\\LaComarca.Plugin.csproj": {}
+    "D:\\AUTOMHA\\6514_LA_COMARCA_L3\\LaComarca.Plugin\\LaComarca.Plugin.csproj": {}
   },
   "projects": {
-    "D:\\Sviluppo_Automha\\LA_COMARCA_L3\\LaComarca.Plugin\\LaComarca.Plugin.csproj": {
+    "D:\\AUTOMHA\\6514_LA_COMARCA_L3\\LaComarca.Plugin\\LaComarca.Plugin.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "D:\\Sviluppo_Automha\\LA_COMARCA_L3\\LaComarca.Plugin\\LaComarca.Plugin.csproj",
+        "projectUniqueName": "D:\\AUTOMHA\\6514_LA_COMARCA_L3\\LaComarca.Plugin\\LaComarca.Plugin.csproj",
         "projectName": "LaComarca.Plugin",
-        "projectPath": "D:\\Sviluppo_Automha\\LA_COMARCA_L3\\LaComarca.Plugin\\LaComarca.Plugin.csproj",
-        "packagesPath": "C:\\Users\\riccardo.vanoncini\\.nuget\\packages\\",
-        "outputPath": "D:\\Sviluppo_Automha\\LA_COMARCA_L3\\LaComarca.Plugin\\obj\\",
+        "projectPath": "D:\\AUTOMHA\\6514_LA_COMARCA_L3\\LaComarca.Plugin\\LaComarca.Plugin.csproj",
+        "packagesPath": "C:\\Users\\VITTORIO.PIATTI\\.nuget\\packages\\",
+        "outputPath": "D:\\AUTOMHA\\6514_LA_COMARCA_L3\\LaComarca.Plugin\\obj\\",
         "projectStyle": "PackageReference",
         "fallbackFolders": [
-          "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages",
-          "C:\\Program Files\\dotnet\\sdk\\NuGetFallbackFolder"
+          "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"
         ],
         "configFilePaths": [
-          "C:\\Users\\riccardo.vanoncini\\AppData\\Roaming\\NuGet\\NuGet.Config",
+          "C:\\Users\\VITTORIO.PIATTI\\AppData\\Roaming\\NuGet\\NuGet.Config",
           "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.FallbackLocation.config",
           "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.Offline.config"
         ],
@@ -27,7 +26,6 @@
         ],
         "sources": {
           "C:\\Program Files (x86)\\Microsoft SDKs\\NuGetPackages\\": {},
-          "http://nuget.itd-italia.com/nuget": {},
           "https://api.nuget.org/v3/index.json": {},
           "https://nuget.pkg.github.com/automhaspa/index.json": {}
         },
@@ -46,6 +44,44 @@
       "frameworks": {
         "net5.0": {
           "targetAlias": "net5.0",
+          "dependencies": {
+            "Automha.Common.Utilities": {
+              "target": "Package",
+              "version": "[2.3.2, )"
+            },
+            "Automha.Infrastructure.Abstractions": {
+              "target": "Package",
+              "version": "[2.3.2, )"
+            },
+            "Automha.Infrastructure.Primitives": {
+              "target": "Package",
+              "version": "[2.3.2, )"
+            },
+            "Automha.Infrastructure.Repositories": {
+              "target": "Package",
+              "version": "[2.3.2, )"
+            },
+            "Automha.L2.Common.Entities": {
+              "target": "Package",
+              "version": "[2.3.2, )"
+            },
+            "Automha.L2.Core.Communication.APComm": {
+              "target": "Package",
+              "version": "[2.3.2, )"
+            },
+            "Automha.Plugin.Abstractions": {
+              "target": "Package",
+              "version": "[2.3.2, )"
+            },
+            "Automha.Warehouse.Abstractions": {
+              "target": "Package",
+              "version": "[2.3.2, )"
+            },
+            "Automha.Warehouse.Extensions": {
+              "target": "Package",
+              "version": "[2.3.2, )"
+            }
+          },
           "imports": [
             "net461",
             "net462",
@@ -61,7 +97,7 @@
               "privateAssets": "all"
             }
           },
-          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\5.0.404\\RuntimeIdentifierGraph.json"
+          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\5.0.406\\RuntimeIdentifierGraph.json"
         }
       }
     }
