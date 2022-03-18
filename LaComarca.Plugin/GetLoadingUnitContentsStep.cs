@@ -1,345 +1,426 @@
-﻿//using Automha.Common.Utilities;
-//using Automha.Infrastructure.Abstractions;
-//using Automha.Infrastructure.Primitives;
-//using Automha.Infrastructure.Repositories;
-//using Automha.L2.Core.Communication.APComm;
-//using Automha.L2.Core.Communication.APComm.Messages;
-//using Automha.Warehouse.Abstractions;
-//using Automha.Warehouse.Extensions;
-//using Microsoft.Extensions.DependencyInjection;
-//using Services;
-//using System;
-//using System.Collections.Generic;
-//using System.Globalization;
-//using System.Linq;
-//using System.Text;
-//using System.Threading;
-//using System.Threading.Tasks;
-
-//namespace LaComarca.Plugin
-//{
-//    public class GetLoadingUnitContentsStep : ILoadingUnitStep, IRejectableStep, IDisposable
-//    {
-//        private CancellationTokenSource? _cts;
-//        private Dictionary<string, string> _errors = new();
+﻿using Automha.Common.Utilities;
+using Automha.Infrastructure.Abstractions;
+using Automha.Infrastructure.Primitives;
+using Automha.Infrastructure.Repositories;
+using Automha.L2.Core.Communication.APComm;
+using Automha.L2.Core.Communication.APComm.Messages;
+using Automha.Warehouse.Abstractions;
+using Automha.Warehouse.Extensions;
+using LaComarca.Plugin.Lu;
+using LaComarca.Plugin.Articles;
+using Microsoft.Data.SqlClient;
+using Microsoft.Extensions.DependencyInjection;
+using System;
+using System.Collections.Generic;
+using System.Globalization;
+using System.Linq;
+using System.Text;
+using System.Threading;
+using System.Threading.Tasks;
 
-//        private readonly IServiceProvider _services;
-//        private readonly Lazy<IMissionManager> _mm;
-//        private readonly CultureInfo _cultureInfoIt = new("it-IT");
+namespace LaComarca.Plugin
+{
+    public class GetLoadingUnitContentsStep : ILoadingUnitStep, IRejectableStep, IDisposable
+    {
+        private CancellationTokenSource? _cts;
+        private Dictionary<string, string> _errors = new();
 
-//        public TimeSpan Timeout { get; set; } = TimeSpan.FromSeconds(30);
+        private readonly IServiceProvider _services;
+        private readonly Lazy<IMissionManager> _mm;
+        private readonly CultureInfo _cultureInfoIt = new("it-IT");
 
-//        public GetLoadingUnitContentsStep(ILoadingUnitMission mission, int stepId, IServiceProvider services, StepStatus status = StepStatus.New, string? descr = null, ILink? link = null, ICompoundLink? compoundLink = null)
-//        {
-//            LoadingUnitMission = mission;
-//            Id = stepId;
-//            Status = status;
-//            Description = descr ?? nameof(GetLoadingUnitContentsStep);
-//            Link = link;
-//            CompoundLink = compoundLink;
+        public TimeSpan Timeout { get; set; } = TimeSpan.FromSeconds(30);
 
-//            _services = services;
-//            _mm = new Lazy<IMissionManager>(() => services.GetRequiredService<IMissionManager>(), LazyThreadSafetyMode.ExecutionAndPublication);
-//        }
+        #region  QUERY
+        private const string _getLuBills = "SELECT " +
+                                         " [ID_BILL]" +
+                                         ",[SSCC]" +
+                                         ",[ID_REFERENCE]" +
+                                         ",[QT]" +
+                                         ",[BATCH_LOT]" +
+                                         ",[EXPIRY_DATE]" +
+                                         ",[SYNC]" +
+                                         ",[SYNC_DATE]" +
+                                     "FROM[LA_COMARCA_L3].[dbo].[Lu_Bill]";
+
+        private const string _getLuBill = _getLuBills + "WHERE SSCC = @Barcode and SYNC <> 2";
+
+        private const string _getReferences = "SELECT TOP (1000) [ID_REFERENCE]" +
+                                               ",[DESCRIPTION]" +
+                                               ",[ROTATION_CLASS]" +
+                                               ",[SYNC]" +
+                                               ",[SYNC_DATE]" +
+                                               ",[FLOOR_SELECTION]" +
+                                               "FROM[LA_COMARCA_L3].[dbo].[References]";
+
+        private const string _getReference = _getReferences + "WHERE Id_Reference = @Article";
 
-//        public int Id { get; }
-
-//        public string Description { get; }
-
-//        public IMission Mission => LoadingUnitMission;
-
-//        public StepStatus Status { get; private set; }
-
-//        public MessageType MessageTypeId => MessageType.None;
-
-//        public ILoadingUnitMission LoadingUnitMission { get; }
-
-//        public DateTime? LatestExecution { get; set; }
-
-//        public TimeSpan? TotalExecutionTime { get; }
-
-//        public ILink? Link { get; }
-
-//        public ICompoundLink? CompoundLink { get; }
-
-
-//        public bool CheckStartCondition(IEnumerable<IMission> missions)
-//            => true;
-
-//        public StepStatus Resetting()
-//        {
-//            CancelAndReset();
-
-//            return StepStatus.New;
-//        }
-
-//        public StepStatus Completing(IDataCluster? message = null)
-//        {
-//            if (message is not null)
-//                throw new InvalidOperationException($"Cannot complete {nameof(GetLoadingUnitContentsStep)} with {message.Message.GetType()}");
-
-//            CancelAndReset();
-
-//            if (_errors.Any())
-//                return StepStatus.Error;
-
-//            return StepStatus.Completed;
-//        }
-
-//        public StepStatus Executing()
-//        {
-//            if (_errors.Any())
-//                _errors = new();
-
-//            _cts = new CancellationTokenSource(Timeout);
-//            _ = GetContentsAsync(_cts.Token).ConfigureAwait(false);
-
-//            return StepStatus.Running;
-//        }
-//        private void CompleteSelf()
-//         => _mm.Value.CompleteStep(Mission.Id, Id);
-
-//        public async Task GetContentsAsync(CancellationToken token = default)
-//        {
-//            try
-//            {
-//                if (await IsLuFilledAsync(token))
-//                {
-//                    _errors.Add("Contents", "Lu already filled");
-//                    return;
-//                }
-
-//                var barcode = LoadingUnitMission.LoadingUnit.Data.Code;
-
-//                if (string.IsNullOrEmpty(barcode))
-//                {
-//                    _errors.Add("Barcode", "Invalid barcode");
-//                    return;
-//                }
-
-//                var req = new GetLuContentReq
-//                {
-//                    Barcode = barcode
-//                };
-
-//                var cli = new SrvReplicaSoapClient(new SrvReplicaSoapClient.EndpointConfiguration());
-
-//                await cli.OpenAsync();
-
-//                var resp = await cli.GetLuContentAsync(req);
-//                LoggerObjectToFile.Log("getLuContent " + barcode + " " + resp.Body.GetLuContentResult.EsitoSS);
-
-//                token.ThrowIfCancellationRequested();
-
-//                var res = resp.Body.GetLuContentResult;
-
-//                if (res.EsitoSS != "OK")
-//                {
-//                    _errors.Add("Esito", "Esito inaspettato da Stocksystem: " + res.EsitoSS);
-//                    return;
-//                }
-
-//                if (res.Head.UDC != barcode)
-//                {
-//                    _errors.Add("Risposta", "Risposta inaspettata da Stocksystem: " + res.Head.UDC);
-//                    return;
-//                }
-
-//                if (res.Body.Length == 0)
-//                {
-//                    _errors.Add("Contenuto", "Nessun contenuto rilevato");
-//                    return;
-//                }
-
-//                var contents = await SaveContentsAsync(res, token);
-
-//                string l3Status = _errors.Any() ? "Rejected" : "Accepted";
-
-//                if (l3Status == "Accepted")
-//                {
-//                    var changeReq = new OnLuStatusChangeReq
-//                    {
-//                        UDC = LoadingUnitMission.LoadingUnit.Data.Code,
-//                        ASI = LoadingUnitMission.Destination.Partition.GetItem().GetAsiCode(),
-//                        Stato = l3Status
-//                    };
-
-//                    var changeResp = await cli.OnLuStatusChangeAsync(changeReq);
-
-//                    if (changeResp.Body.OnLuStatusChangeResult.EsitoSS != "OK")
-//                    {
-//                        _errors.Add("Risposta", "Risposta inaspettata da Stocksystem sullo Status change: " + changeResp.Body.OnLuStatusChangeResult.EsitoSS);
-//                        return;
-//                    }
-//                }
-//            }
-//            catch (Exception ex)
-//            {
-//                _errors.Add(ex.GetType().Name, ex.Message);
-//            }
-//            finally
-//            {
-//                CompleteSelf();
-//            }
-//        }
-
-//        private async Task<IEnumerable<LoadingUnitContent>> SaveContentsAsync(GetLuContentRes resp, CancellationToken token)
-//        {
-//            await using var uow = _services.GetRequiredService<IUnitOfWork>();
-
-//            var compartments = new List<Compartment>();
-
-//            var contents = new List<LoadingUnitContent>(resp.Body.Length);
-
-//            foreach (var item in resp.Body)
-//            {
-//                var article = await uow.ArticleRepository.GetAsync(item.Articolo, token);
-
-//                if (article is null)
-//                {
-//                    _errors.Add("Articolo", "Articolo non trovato:  " + item.Articolo);
-//                    break;
-//                }
-
-//                var _cultureIfoIt = CultureInfo.GetCultureInfo("it-IT");
-//                var quantity = decimal.Parse(item.Qta, _cultureInfoIt);
-
-//                DateTime? insertDate = null;
-
-//                if (!string.IsNullOrEmpty(item.DtIngresso))
-//                {
-//                    if (!DateTime.TryParse(item.DtIngresso, _cultureIfoIt, DateTimeStyles.None, out var parsedDtIngresso))
-//                    {
-//                        _errors.Add("DtIngresso", "Formato data ingresso non valido:  " + item.DtIngresso);
-//                        break;
-//                    }
-//                    else insertDate = parsedDtIngresso;
-//                }
-
-//                DateTime? expirationDate = null;
-//                if (!string.IsNullOrEmpty(item.dtScadenza))
-//                {
-//                    if (!DateTime.TryParse(item.dtScadenza, _cultureIfoIt, DateTimeStyles.None, out var parsedDtScadenza))
-//                    {
-//                        _errors.Add("DtIngresso", "Formato data scadenza non valido:  " + item.dtScadenza);
-//                        break;
-//                    }
-//                    else expirationDate = parsedDtScadenza;
-//                }
-
-//                Batch? batch = await GetBatch(resp, uow, item, article, token);
-//                Compartment? compartment;
-//                Company? supplier;
-
-//                if (!string.IsNullOrEmpty(item.IdContenitore))
-//                {
-//                    compartment = compartments.FirstOrDefault(c => c.Code == item.IdContenitore);
-
-//                    if (compartment is null)
-//                    {
-//                        compartment = new Compartment(0, item.IdContenitore, LoadingUnitMission.LoadingUnit.Id, Jolly1: item.Var1, Jolly2: item.Var2, Jolly3: item.NumeroOrdine, Locked: item.Bloccato.ToLower() == "true");
-
-//                        compartment = await uow.CompartmentRepository.AddAsync(compartment, token);
-
-//                        compartments.Add(compartment);
-//                    }
-//                }
-//                else compartment = null;
-
-//                if (!string.IsNullOrEmpty(item.RagSocFor))
-//                {
-//                    supplier = new Company(0, null, item.RagSocFor, item.RagSocFor, false, true);
-
-//                    supplier = await uow.CompanyRepository.GetOrAddAsync(supplier, token);
-//                }
-//                else supplier = null;
-
-//                var content = new LoadingUnitContent
-//                (
-//                    0,
-//                    LoadingUnitMission.LoadingUnit.Id,
-//                    article.Id,
-//                    quantity,
-//                    insertDate ?? DateTime.Now,
-//                    null,
-//                    expirationDate,
-//                    batch?.Id,
-//                    batch?.Id,
-//                    null,
-//                    item.CodRiserva,
-//                    null,
-//                    supplier?.Id,
-//                    compartment?.Id,
-//                    null,
-//                    null,
-//                    false,
-//                    null
-//                );
-
-//                content = await uow.LoadingUnitContentRepository.AddAsync(content, nameof(GetLoadingUnitContentsStep), StockMovementType.Filling, token);
-//                contents.Add(content);
-
-//            }
-//            await uow.SaveChangesAsync(token);
-
-//            return contents;
-//        }
-
-//        private static async Task<Batch?> GetBatch(GetLuContentRes resp, IUnitOfWork uow, GetLuContentResBody item, Article? article, CancellationToken token)
-//        {
-//            if (!string.IsNullOrEmpty(item.Lotto))
-//            {
-//                var batch = new Batch
-//                (
-//                    0,
-//                    item.Lotto + " | " + article.Id,
-//                    article.Id,
-//                    BatchType.Storage,
-//                    BatchStatus.New,
-//                    DateTime.Now,
-//                    Size: int.Parse(resp.Head.NRPalOmogenei) + 1 //Because NRPalOmogenei not consider itself
-//                );
-
-//                return await uow.BatchRepository.GetOrAddAsync(batch, token);
-//            }
-
-//            return null;
-//        }
-
-//        public async Task<bool> IsLuFilledAsync(CancellationToken token = default)
-//        {
-//            await using var uow = _services.GetRequiredService<IUnitOfWork>();
-
-//            var contents = await uow.LoadingUnitContentRepository
-//                                    .GetLoadingUnitContentsAsync(LoadingUnitMission.LoadingUnit.Id, token)
-//                                    .ToListAsync(token);
-
-//            return contents.Any();
-//        }
-
-//        public StepStatus SetStatus(StepStatus status)
-//        {
-//            CancelAndReset();
-
-//            Status = status;
-
-//            return Status;
-//        }
-
-//        public void Dispose()
-//        {
-//            CancelAndReset();
-//        }
-
-//        private void CancelAndReset()
-//        {
-//            if (_cts is not null)
-//            {
-//                _cts.Dispose();
-//                _cts = null;
-//            }
-//        }
-
-//        public IReadOnlyDictionary<string, string> FailureReasons { get => _errors; }
-//    }
-//}
+        private const string _updateLuSyncCorrect = "UPDATE Lu_Bill set SYNC=3 WHERE SSCC=@Barcode";
+        private const string _updateRefSyncCorrect = "UPDATE References set SYNC=2 WHERE SSCC=@Barcode";
+        private const string _updateRefSyncError = "UPDATE References set SYNC=2 WHERE SSCC=@Barcode";
+
+
+        private const string _ConnectionString = "Data Source=.\\SQLEXPRESS;Integrated Security=true;Connect Timeout=30;Initial Catalog=LA_COMARCA_L3; user id=sa;password=Cst03211030162;Persist Security Info=False;";
+        #endregion
+
+
+        public GetLoadingUnitContentsStep(ILoadingUnitMission mission, int stepId, IServiceProvider services, StepStatus status = StepStatus.New, string? descr = null, ILink? link = null, ICompoundLink? compoundLink = null)
+        {
+            LoadingUnitMission = mission;
+            Id = stepId;
+            Status = status;
+            Description = descr ?? nameof(GetLoadingUnitContentsStep);
+            Link = link;
+            CompoundLink = compoundLink;
+
+            _services = services;
+            _mm = new Lazy<IMissionManager>(() => services.GetRequiredService<IMissionManager>(), LazyThreadSafetyMode.ExecutionAndPublication);
+        }
+
+        public int Id { get; }
+
+        public string Description { get; }
+
+        public IMission Mission => LoadingUnitMission;
+
+        public StepStatus Status { get; private set; }
+
+        public MessageType MessageTypeId => MessageType.None;
+
+        public ILoadingUnitMission LoadingUnitMission { get; }
+
+        public DateTime? LatestExecution { get; set; }
+
+        public TimeSpan? TotalExecutionTime { get; }
+
+        public ILink? Link { get; }
+
+        public ICompoundLink? CompoundLink { get; }
+
+
+        public bool CheckStartCondition(IEnumerable<IMission> missions)
+            => true;
+
+        public StepStatus Resetting()
+        {
+            CancelAndReset();
+
+            return StepStatus.New;
+        }
+
+        public StepStatus Completing(IDataCluster? message = null)
+        {
+            if (message is not null)
+                throw new InvalidOperationException($"Cannot complete {nameof(GetLoadingUnitContentsStep)} with {message.Message.GetType()}");
+
+            CancelAndReset();
+
+            if (_errors.Any())
+                return StepStatus.Error;
+
+            return StepStatus.Completed;
+        }
+
+        public StepStatus Executing()
+        {
+            if (_errors.Any())
+                _errors = new();
+
+            _cts = new CancellationTokenSource(Timeout);
+            _ = GetContentsAsync(_cts.Token).ConfigureAwait(false);
+
+            return StepStatus.Running;
+        }
+        private void CompleteSelf()
+         => _mm.Value.CompleteStep(Mission.Id, Id);
+
+        public async Task GetContentsAsync(CancellationToken token = default)
+        {
+            try
+            {
+                if (await IsLuFilledAsync(token))
+                {
+                    _errors.Add("Contents", "Lu already filled");
+                    return;
+                }
+
+                var barcode = LoadingUnitMission.LoadingUnit.Data.Code;
+
+                if (string.IsNullOrEmpty(barcode))
+                {
+                    _errors.Add("Barcode", "Invalid barcode");
+                    return;
+                }
+
+                List<LoadingUnitContentData> LuBills = new List<LoadingUnitContentData>();
+
+                using (SqlConnection connection = new SqlConnection(_ConnectionString))
+                {
+                    await connection.OpenAsync(token);
+                    using (SqlCommand cmd = new SqlCommand(_getLuBill, connection))
+                    {
+                        cmd.Parameters.AddWithValue("@Barcode", barcode);
+                        using (SqlDataReader reader = cmd.ExecuteReader())
+                        {
+                            while (reader.Read())
+                            {
+                                LoadingUnitContentData LuData = new LoadingUnitContentData();
+                                LuData.Id = reader.GetInt32(0);
+                                LuData.SSCC = reader.GetString(1);
+                                LuData.Id_reference = reader.GetString(2);
+                                LuData.QT = reader.GetDecimal(3);
+                                LuData.batch = reader.GetString(4);
+                                LuData.Expiry_Date = reader.GetString(5);
+                                LuData.SYNC = reader.GetInt16(6);
+                                LuData.SYNC_Date = reader.GetString(7);
+
+                                LuBills.Add(LuData);
+                            }
+                        }
+                    }
+                    await connection.CloseAsync();
+                }
+
+                await SaveContentsAsync(LuBills , token);
+
+                //metto sync = 2 su lu_bill
+                if (!_errors.Any())
+                {
+                    using (SqlConnection connection = new SqlConnection(_ConnectionString))
+                    {
+                        await connection.OpenAsync(token);
+                        using (SqlCommand cmd = new SqlCommand(_updateLuSyncCorrect, connection))
+                        {
+                            cmd.Parameters.AddWithValue("@Barcode", barcode);
+                            cmd.ExecuteNonQuery();
+                        }
+                        await connection.CloseAsync();
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                _errors.Add(ex.GetType().Name, ex.Message);
+            }
+            finally
+            {
+                CompleteSelf();
+            }
+        }
+
+        private async Task SaveContentsAsync(List<LoadingUnitContentData> Data, CancellationToken token)
+        {
+            await using var uow = _services.GetRequiredService<IUnitOfWork>();
+
+            foreach (var item in Data)
+            {
+                var article = await uow.ArticleRepository.GetAsync(item.Id_reference, token);
+                
+                if (article is null)
+                {
+                    article = await GetArticle(item.Id_reference, uow, token);
+                    if (article is null)
+                    {
+                        _errors.Add("Articolo", "Articolo non trovato:  " + item.Id_reference);
+                        break;
+                    }
+                }
+
+                var _cultureIfoIt = CultureInfo.GetCultureInfo("it-IT");
+
+                DateTime? expirationDate = null;
+                if (!string.IsNullOrEmpty(item.Expiry_Date))
+                {
+                    if (!DateTime.TryParse(item.Expiry_Date, _cultureIfoIt, DateTimeStyles.None, out var parsedDtScadenza))
+                    {
+                        _errors.Add("DtIngresso", "Formato data scadenza non valido:  " + item.Expiry_Date);
+                        break;
+                    }
+                    else expirationDate = parsedDtScadenza;
+                }
+
+                Batch? batch = await GetBatch(Data, uow, item, article, token);
+                
+
+                var content = new LoadingUnitContent
+                (
+                    0,
+                    LoadingUnitMission.LoadingUnit.Id,
+                    article.Id,
+                    item.QT,
+                    DateTime.Now,
+                    null,
+                    expirationDate,
+                    batch?.Id,
+                    batch?.Id,
+                    null,
+                    null,
+                    null,
+                    null,
+                    null,
+                    null,
+                    null
+                );
+
+                content = await uow.LoadingUnitContentRepository.AddAsync(content, nameof(GetLoadingUnitContentsStep), StockMovementType.Filling, token);
+
+            }
+            await uow.SaveChangesAsync(token);
+
+           
+        }
+
+        private static async Task<Batch?> GetBatch(List<LoadingUnitContentData> Data, IUnitOfWork uow, LoadingUnitContentData item, Article? article, CancellationToken token)
+        {
+            if (!string.IsNullOrEmpty(item.batch))
+            {
+                var batch = new Batch
+                (
+                    0,
+                    item.batch + " | " + article.Id,
+                    article.Id,
+                    BatchType.Storage,
+                    BatchStatus.New,
+                    DateTime.Now,
+                    Size: 1 
+                );
+
+                return await uow.BatchRepository.GetOrAddAsync(batch, token);
+            }
+
+            return null;
+        }
+
+        private async Task<Article?> GetArticle(string referenceId, IUnitOfWork uow, CancellationToken token)
+        {
+
+            using (SqlConnection connection = new SqlConnection(_ConnectionString))
+            {
+                if (!string.IsNullOrEmpty(referenceId))
+                {
+                    ReferenceData? Ref = null;
+                    await connection.OpenAsync(token);
+                    using (SqlCommand cmd = new SqlCommand(_getReference, connection))
+                    {
+                        cmd.Parameters.AddWithValue("@Article", referenceId);
+                        using (SqlDataReader reader = cmd.ExecuteReader())
+                        {
+                            while (reader.Read())
+                            {
+                                Ref = new ReferenceData();
+                                Ref.Id_Reference = reader.GetString(0);
+                                Ref.Description = reader.GetString(1);
+                                Ref.Rotation_Class = reader.GetInt32(2);
+                                Ref.SYNC = reader.GetInt32(3);
+                                Ref.SYNC_Date = reader.GetString(4);
+                                Ref.Floor_Selection = reader.GetInt32(5);
+                            }
+                        }
+                    }
+                    await connection.CloseAsync();
+
+                    if (Ref is not null) 
+                    {
+                        if (string.IsNullOrEmpty(Ref.Description))
+                        {
+                            _errors.Add("Articolo", "Descrizione articolo non valida:  " + referenceId);
+                            return null;
+                            //update sync -2
+
+                            using (SqlConnection Conn = new SqlConnection(_ConnectionString))
+                            {
+                                await connection.OpenAsync(token);
+                                using (SqlCommand cmd = new SqlCommand(_updateRefSyncError, connection))
+                                {
+                                    cmd.Parameters.AddWithValue("@Barcode", referenceId);
+
+                                }
+                                await connection.CloseAsync();
+                            }
+                        }
+                        var Art = new Article
+                       (
+                           0,
+                           Ref.Id_Reference,
+                           Ref.Description,
+                           null,
+                           null,
+                           null,
+                           null,
+                           null
+                       );
+                        var result = await uow.ArticleRepository.AddOrUpdateAsync(Art, token);
+
+                        if (result is not null)
+                        {
+                            //sync=2
+                            using (SqlConnection Conn = new SqlConnection(_ConnectionString))
+                            {
+                                await connection.OpenAsync(token);
+                                using (SqlCommand cmd = new SqlCommand(_updateRefSyncCorrect, connection))
+                                {
+                                    cmd.Parameters.AddWithValue("@Barcode", referenceId);
+
+                                }
+                                await connection.CloseAsync();
+                            }
+                            return result;
+                        }
+                        else
+                        {
+                            //sync=-2
+                            using (SqlConnection Conn = new SqlConnection(_ConnectionString))
+                            {
+                                await connection.OpenAsync(token);
+                                using (SqlCommand cmd = new SqlCommand(_updateRefSyncError, connection))
+                                {
+                                    cmd.Parameters.AddWithValue("@Barcode", referenceId);
+
+                                }
+                                await connection.CloseAsync();
+                            }
+                        }
+                    }
+                }
+
+                return null;
+            }
+        }
+
+            public async Task<bool> IsLuFilledAsync(CancellationToken token = default)
+            {
+                await using var uow = _services.GetRequiredService<IUnitOfWork>();
+                var contents = await uow.LoadingUnitContentRepository.GetLoadingUnitContentsAsync(LoadingUnitMission.LoadingUnit.Id, token);         //.ToListAsync(token);
+                return contents.Any();
+            }
+
+        public StepStatus SetStatus(StepStatus status)
+        {
+            CancelAndReset();
+
+            Status = status;
+
+            return Status;
+        }
+
+        public void Dispose()
+        {
+            CancelAndReset();
+        }
+
+        private void CancelAndReset()
+        {
+            if (_cts is not null)
+            {
+                _cts.Dispose();
+                _cts = null;
+            }
+        }
+
+        public IReadOnlyDictionary<string, string> FailureReasons { get => _errors; }
+
+        public StepWeight StepWeight => throw new NotImplementedException();
+
+        public Priority Priority { get => throw new NotImplementedException(); set => throw new NotImplementedException(); }
+    }
+}

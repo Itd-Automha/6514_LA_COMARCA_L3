@@ -141,6 +141,25 @@
           "lib/netstandard2.1/Automha.Plugin.Abstractions.dll": {}
         }
       },
+      "Automha.Test.Utilities/2.3.2": {
+        "type": "package",
+        "dependencies": {
+          "Automha.Common.Utilities": "2.3.2",
+          "Microsoft.Data.SqlClient": "3.0.0",
+          "Microsoft.Extensions.Configuration.Abstractions": "5.0.0",
+          "Microsoft.Extensions.Configuration.Json": "5.0.0",
+          "Microsoft.Extensions.DependencyInjection.Abstractions": "5.0.0",
+          "Microsoft.Extensions.Logging": "5.0.0",
+          "Microsoft.Extensions.Logging.Abstractions": "5.0.0",
+          "xunit.extensibility.core": "2.4.1"
+        },
+        "compile": {
+          "lib/net5.0/Automha.Test.Utilities.dll": {}
+        },
+        "runtime": {
+          "lib/net5.0/Automha.Test.Utilities.dll": {}
+        }
+      },
       "Automha.Warehouse.Abstractions/2.3.2": {
         "type": "package",
         "dependencies": {
@@ -1359,6 +1378,28 @@
             "rid": "win"
           }
         }
+      },
+      "xunit.abstractions/2.0.3": {
+        "type": "package",
+        "compile": {
+          "lib/netstandard2.0/xunit.abstractions.dll": {}
+        },
+        "runtime": {
+          "lib/netstandard2.0/xunit.abstractions.dll": {}
+        }
+      },
+      "xunit.extensibility.core/2.4.1": {
+        "type": "package",
+        "dependencies": {
+          "NETStandard.Library": "1.6.1",
+          "xunit.abstractions": "2.0.3"
+        },
+        "compile": {
+          "lib/netstandard1.1/xunit.core.dll": {}
+        },
+        "runtime": {
+          "lib/netstandard1.1/xunit.core.dll": {}
+        }
       }
     }
   },
@@ -1469,6 +1510,18 @@
         "automha.plugin.abstractions.nuspec",
         "favicon-automha.png",
         "lib/netstandard2.1/Automha.Plugin.Abstractions.dll"
+      ]
+    },
+    "Automha.Test.Utilities/2.3.2": {
+      "sha512": "i0fvPqmQNlBT+HoVQrXXbb+x7P5am6yJ5eslmbz9RtNqa89Jg0uAoMJY3h5LxP3LjVTq8dgaQGD1s1HR8tsUBQ==",
+      "type": "package",
+      "path": "automha.test.utilities/2.3.2",
+      "files": [
+        ".nupkg.metadata",
+        "automha.test.utilities.2.3.2.nupkg.sha512",
+        "automha.test.utilities.nuspec",
+        "favicon-automha.png",
+        "lib/net5.0/Automha.Test.Utilities.dll"
       ]
     },
     "Automha.Warehouse.Abstractions/2.3.2": {
@@ -3736,6 +3789,41 @@
         "useSharedDesignerContext.txt",
         "version.txt"
       ]
+    },
+    "xunit.abstractions/2.0.3": {
+      "sha512": "pot1I4YOxlWjIb5jmwvvQNbTrZ3lJQ+jUGkGjWE3hEFM0l5gOnBWS+H3qsex68s5cO52g+44vpGzhAt+42vwKg==",
+      "type": "package",
+      "path": "xunit.abstractions/2.0.3",
+      "files": [
+        ".nupkg.metadata",
+        ".signature.p7s",
+        "lib/net35/xunit.abstractions.dll",
+        "lib/net35/xunit.abstractions.xml",
+        "lib/netstandard1.0/xunit.abstractions.dll",
+        "lib/netstandard1.0/xunit.abstractions.xml",
+        "lib/netstandard2.0/xunit.abstractions.dll",
+        "lib/netstandard2.0/xunit.abstractions.xml",
+        "xunit.abstractions.2.0.3.nupkg.sha512",
+        "xunit.abstractions.nuspec"
+      ]
+    },
+    "xunit.extensibility.core/2.4.1": {
+      "sha512": "yKZKm/8QNZnBnGZFD9SewkllHBiK0DThybQD/G4PiAmQjKtEZyHi6ET70QPU9KtSMJGRYS6Syk7EyR2EVDU4Kg==",
+      "type": "package",
+      "path": "xunit.extensibility.core/2.4.1",
+      "files": [
+        ".nupkg.metadata",
+        ".signature.p7s",
+        "lib/net452/xunit.core.dll",
+        "lib/net452/xunit.core.dll.tdnet",
+        "lib/net452/xunit.core.xml",
+        "lib/net452/xunit.runner.tdnet.dll",
+        "lib/net452/xunit.runner.utility.net452.dll",
+        "lib/netstandard1.1/xunit.core.dll",
+        "lib/netstandard1.1/xunit.core.xml",
+        "xunit.extensibility.core.2.4.1.nupkg.sha512",
+        "xunit.extensibility.core.nuspec"
+      ]
     }
   },
   "projectFileDependencyGroups": {
@@ -3747,28 +3835,31 @@
       "Automha.L2.Common.Entities >= 2.3.2",
       "Automha.L2.Core.Communication.APComm >= 2.3.2",
       "Automha.Plugin.Abstractions >= 2.3.2",
+      "Automha.Test.Utilities >= 2.3.2",
       "Automha.Warehouse.Abstractions >= 2.3.2",
       "Automha.Warehouse.Extensions >= 2.3.2"
     ]
   },
   "packageFolders": {
-    "C:\\Users\\VITTORIO.PIATTI\\.nuget\\packages\\": {},
-    "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages": {}
+    "C:\\Users\\riccardo.vanoncini\\.nuget\\packages\\": {},
+    "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages": {},
+    "C:\\Program Files\\dotnet\\sdk\\NuGetFallbackFolder": {}
   },
   "project": {
     "version": "1.0.0",
     "restore": {
-      "projectUniqueName": "D:\\AUTOMHA\\6514_LA_COMARCA_L3\\LaComarca.Plugin\\LaComarca.Plugin.csproj",
+      "projectUniqueName": "D:\\Sviluppo_Automha\\6514_LA_COMARCA_L3\\LaComarca.Plugin\\LaComarca.Plugin.csproj",
       "projectName": "LaComarca.Plugin",
-      "projectPath": "D:\\AUTOMHA\\6514_LA_COMARCA_L3\\LaComarca.Plugin\\LaComarca.Plugin.csproj",
-      "packagesPath": "C:\\Users\\VITTORIO.PIATTI\\.nuget\\packages\\",
-      "outputPath": "D:\\AUTOMHA\\6514_LA_COMARCA_L3\\LaComarca.Plugin\\obj\\",
+      "projectPath": "D:\\Sviluppo_Automha\\6514_LA_COMARCA_L3\\LaComarca.Plugin\\LaComarca.Plugin.csproj",
+      "packagesPath": "C:\\Users\\riccardo.vanoncini\\.nuget\\packages\\",
+      "outputPath": "D:\\Sviluppo_Automha\\6514_LA_COMARCA_L3\\LaComarca.Plugin\\obj\\",
       "projectStyle": "PackageReference",
       "fallbackFolders": [
-        "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"
+        "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages",
+        "C:\\Program Files\\dotnet\\sdk\\NuGetFallbackFolder"
       ],
       "configFilePaths": [
-        "C:\\Users\\VITTORIO.PIATTI\\AppData\\Roaming\\NuGet\\NuGet.Config",
+        "C:\\Users\\riccardo.vanoncini\\AppData\\Roaming\\NuGet\\NuGet.Config",
         "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.FallbackLocation.config",
         "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.Offline.config"
       ],
@@ -3824,6 +3915,10 @@
             "target": "Package",
             "version": "[2.3.2, )"
           },
+          "Automha.Test.Utilities": {
+            "target": "Package",
+            "version": "[2.3.2, )"
+          },
           "Automha.Warehouse.Abstractions": {
             "target": "Package",
             "version": "[2.3.2, )"
@@ -3848,8 +3943,16 @@
             "privateAssets": "all"
           }
         },
-        "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\5.0.406\\RuntimeIdentifierGraph.json"
+        "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\5.0.404\\RuntimeIdentifierGraph.json"
       }
     }
-  }
+  },
+  "logs": [
+    {
+      "code": "Undefined",
+      "level": "Warning",
+      "warningLevel": 1,
+      "message": "No Authorization header detected"
+    }
+  ]
 }

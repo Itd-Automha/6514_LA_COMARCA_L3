@@ -5,4 +5,17 @@
     <TargetFramework>net5.0</TargetFramework>
   </PropertyGroup>
 
+  <ItemGroup>
+    <PackageReference Include="Automha.Common.Utilities" Version="2.3.2" />
+    <PackageReference Include="Automha.Infrastructure.Abstractions" Version="2.3.2" />
+    <PackageReference Include="Automha.Infrastructure.Primitives" Version="2.3.2" />
+    <PackageReference Include="Automha.Infrastructure.Repositories" Version="2.3.2" />
+    <PackageReference Include="Automha.L2.Common.Entities" Version="2.3.2" />
+    <PackageReference Include="Automha.L2.Core.Communication.APComm" Version="2.3.2" />
+    <PackageReference Include="Automha.Plugin.Abstractions" Version="2.3.2" />
+    <PackageReference Include="Automha.Test.Utilities" Version="2.3.2" />
+    <PackageReference Include="Automha.Warehouse.Abstractions" Version="2.3.2" />
+    <PackageReference Include="Automha.Warehouse.Extensions" Version="2.3.2" />
+  </ItemGroup>
+
 </Project>

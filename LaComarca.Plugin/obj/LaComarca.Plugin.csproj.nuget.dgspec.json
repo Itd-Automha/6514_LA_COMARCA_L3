@@ -1,23 +1,24 @@
 {
   "format": 1,
   "restore": {
-    "D:\\AUTOMHA\\6514_LA_COMARCA_L3\\LaComarca.Plugin\\LaComarca.Plugin.csproj": {}
+    "D:\\Sviluppo_Automha\\6514_LA_COMARCA_L3\\LaComarca.Plugin\\LaComarca.Plugin.csproj": {}
   },
   "projects": {
-    "D:\\AUTOMHA\\6514_LA_COMARCA_L3\\LaComarca.Plugin\\LaComarca.Plugin.csproj": {
+    "D:\\Sviluppo_Automha\\6514_LA_COMARCA_L3\\LaComarca.Plugin\\LaComarca.Plugin.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "D:\\AUTOMHA\\6514_LA_COMARCA_L3\\LaComarca.Plugin\\LaComarca.Plugin.csproj",
+        "projectUniqueName": "D:\\Sviluppo_Automha\\6514_LA_COMARCA_L3\\LaComarca.Plugin\\LaComarca.Plugin.csproj",
         "projectName": "LaComarca.Plugin",
-        "projectPath": "D:\\AUTOMHA\\6514_LA_COMARCA_L3\\LaComarca.Plugin\\LaComarca.Plugin.csproj",
-        "packagesPath": "C:\\Users\\VITTORIO.PIATTI\\.nuget\\packages\\",
-        "outputPath": "D:\\AUTOMHA\\6514_LA_COMARCA_L3\\LaComarca.Plugin\\obj\\",
+        "projectPath": "D:\\Sviluppo_Automha\\6514_LA_COMARCA_L3\\LaComarca.Plugin\\LaComarca.Plugin.csproj",
+        "packagesPath": "C:\\Users\\riccardo.vanoncini\\.nuget\\packages\\",
+        "outputPath": "D:\\Sviluppo_Automha\\6514_LA_COMARCA_L3\\LaComarca.Plugin\\obj\\",
         "projectStyle": "PackageReference",
         "fallbackFolders": [
-          "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"
+          "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages",
+          "C:\\Program Files\\dotnet\\sdk\\NuGetFallbackFolder"
         ],
         "configFilePaths": [
-          "C:\\Users\\VITTORIO.PIATTI\\AppData\\Roaming\\NuGet\\NuGet.Config",
+          "C:\\Users\\riccardo.vanoncini\\AppData\\Roaming\\NuGet\\NuGet.Config",
           "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.FallbackLocation.config",
           "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.Offline.config"
         ],
@@ -73,6 +74,10 @@
               "target": "Package",
               "version": "[2.3.2, )"
             },
+            "Automha.Test.Utilities": {
+              "target": "Package",
+              "version": "[2.3.2, )"
+            },
             "Automha.Warehouse.Abstractions": {
               "target": "Package",
               "version": "[2.3.2, )"
@@ -97,7 +102,7 @@
               "privateAssets": "all"
             }
           },
-          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\5.0.406\\RuntimeIdentifierGraph.json"
+          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\5.0.404\\RuntimeIdentifierGraph.json"
         }
       }
     }
