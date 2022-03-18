@@ -45,7 +45,7 @@ namespace LaComarca.Plugin
 
         private const string _getLuBill = _getLuBills + "WHERE SSCC = @Barcode and SYNC <> 2";
 
-        private const string _getReferences = "SELECT TOP (1000) [ID_REFERENCE]" +
+        private const string _getReferences = "SELECT [ID_REFERENCE]" +
                                                ",[DESCRIPTION]" +
                                                ",[ROTATION_CLASS]" +
                                                ",[SYNC]" +
@@ -57,7 +57,7 @@ namespace LaComarca.Plugin
 
         private const string _updateLuSyncCorrect = "UPDATE Lu_Bill set SYNC=3 WHERE SSCC=@Barcode";
         private const string _updateRefSyncCorrect = "UPDATE References set SYNC=2 WHERE SSCC=@Barcode";
-        private const string _updateRefSyncError = "UPDATE References set SYNC=2 WHERE SSCC=@Barcode";
+        private const string _updateRefSyncError = "UPDATE References set SYNC=-2 WHERE SSCC=@Barcode";
 
 
         private const string _ConnectionString = "Data Source=.\\SQLEXPRESS;Integrated Security=true;Connect Timeout=30;Initial Catalog=LA_COMARCA_L3; user id=sa;password=Cst03211030162;Persist Security Info=False;";

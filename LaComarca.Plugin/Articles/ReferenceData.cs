@@ -6,9 +6,9 @@ using System.Threading.Tasks;
 
 namespace LaComarca.Plugin.Articles
 {
-    class Reference
+    class ReferenceData
     {
-        public int Id_Reference { get; set; }
+        public string Id_Reference { get; set; }
         public string Description { get; set; }
         public int Rotation_Class { get; set; }
         public int SYNC { get; set; }
