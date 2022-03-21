@@ -9,7 +9,7 @@ using System.Threading.Tasks;
 
 namespace LaComarca.Plugin
 {
-    public class RothoBlaasCore : ICorePlugin
+    public class LaComarcaCore : ICorePlugin
     {
         public IServiceCollection ServiceDescriptors { get; }
             = new ServiceCollection()

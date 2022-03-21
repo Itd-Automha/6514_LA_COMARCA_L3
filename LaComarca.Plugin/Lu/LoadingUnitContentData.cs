@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace LaComarca.Plugin.Lu
 {
-    class LoadingUnitContentData
+    public class LoadingUnitContentData
     {
         public int Id { get; set; }
         public string SSCC { get; set; }

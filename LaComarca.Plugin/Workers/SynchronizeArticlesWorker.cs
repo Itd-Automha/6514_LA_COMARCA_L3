@@ -93,11 +93,8 @@ namespace LaComarca.Plugin.Workers
                                 await connection.CloseAsync();
                         }
                     }
-                }
-
-               
+                }              
                 await connection.CloseAsync();
-            
             }
         }
     }

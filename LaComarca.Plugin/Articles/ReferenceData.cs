@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace LaComarca.Plugin.Articles
 {
-    class ReferenceData
+    public class ReferenceData
     {
         public string Id_Reference { get; set; }
         public string Description { get; set; }
