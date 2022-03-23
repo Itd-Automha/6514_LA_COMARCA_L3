@@ -64,7 +64,7 @@ namespace LaComarca.Plugin
         #endregion
 
 
-        public GetLoadingUnitContentsStep(ILoadingUnitMission mission, int stepId, IServiceProvider services, StepStatus status = StepStatus.New, string? descr = null, ILink? link = null, ICompoundLink? compoundLink = null)
+        public GetLoadingUnitContentsStep(ILoadingUnitMission mission, int stepId, IServiceProvider services, StepStatus status = StepStatus.New, string? descr = null, ILink? link = null, ICompoundLink? compoundLink = null, StepWeight stepWeight = default)
         {
             LoadingUnitMission = mission;
             Id = stepId;
@@ -72,7 +72,8 @@ namespace LaComarca.Plugin
             Description = descr ?? nameof(GetLoadingUnitContentsStep);
             Link = link;
             CompoundLink = compoundLink;
-
+            Priority = mission.Priority;
+            StepWeight = stepWeight;
             _services = services;
             _mm = new Lazy<IMissionManager>(() => services.GetRequiredService<IMissionManager>(), LazyThreadSafetyMode.ExecutionAndPublication);
         }
@@ -97,6 +98,9 @@ namespace LaComarca.Plugin
 
         public ICompoundLink? CompoundLink { get; }
 
+        public Priority Priority { get; set; }
+
+        public StepWeight StepWeight { get; }
 
         public bool CheckStartCondition(IEnumerable<IMission> missions)
             => true;
@@ -311,8 +315,6 @@ namespace LaComarca.Plugin
                                 Ref.Id_Reference = reader.GetString(0);
                                 Ref.Description = reader.GetString(1);
                                 Ref.Rotation_Class = reader.GetInt32(2);
-                                Ref.SYNC = reader.GetInt32(3);
-                                Ref.SYNC_Date = reader.GetString(4);
                                 Ref.Floor_Selection = reader.GetInt32(5);
                             }
                         }
@@ -333,7 +335,7 @@ namespace LaComarca.Plugin
                                 using (SqlCommand cmd = new SqlCommand(_updateRefSyncError, connection))
                                 {
                                     cmd.Parameters.AddWithValue("@Barcode", referenceId);
-
+                                    cmd.ExecuteNonQuery();
                                 }
                                 await connection.CloseAsync();
                             }
@@ -350,6 +352,7 @@ namespace LaComarca.Plugin
                            null
                        );
                         var result = await uow.ArticleRepository.AddOrUpdateAsync(Art, token);
+                        await uow.SaveChangesAsync();
 
                         if (result is not null)
                         {
@@ -360,7 +363,7 @@ namespace LaComarca.Plugin
                                 using (SqlCommand cmd = new SqlCommand(_updateRefSyncCorrect, connection))
                                 {
                                     cmd.Parameters.AddWithValue("@Barcode", referenceId);
-
+                                    cmd.ExecuteNonQuery();
                                 }
                                 await connection.CloseAsync();
                             }
@@ -375,7 +378,7 @@ namespace LaComarca.Plugin
                                 using (SqlCommand cmd = new SqlCommand(_updateRefSyncError, connection))
                                 {
                                     cmd.Parameters.AddWithValue("@Barcode", referenceId);
-
+                                    cmd.ExecuteNonQuery();
                                 }
                                 await connection.CloseAsync();
                             }
@@ -419,8 +422,5 @@ namespace LaComarca.Plugin
 
         public IReadOnlyDictionary<string, string> FailureReasons { get => _errors; }
 
-        public StepWeight StepWeight => throw new NotImplementedException();
-
-        public Priority Priority { get => throw new NotImplementedException(); set => throw new NotImplementedException(); }
     }
 }

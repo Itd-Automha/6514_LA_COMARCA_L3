@@ -30,9 +30,8 @@ namespace LaComarca.Plugin.Workers
                                                    "FROM[LA_COMARCA_L3].[dbo].[References]"+
                                                    "WHERE SYNC=1";
 
-        private const string _updateLuSyncCorrect = "UPDATE Lu_Bill set SYNC=3 WHERE SSCC=@Barcode";
-        private const string _updateRefSyncCorrect = "UPDATE References set SYNC=2 WHERE SSCC=@Barcode";
-        private const string _updateRefSyncError = "UPDATE References set SYNC=-2 WHERE SSCC=@Barcode";
+        private const string _updateRefSyncCorrect  = "UPDATE [dbo].[References] set SYNC=2, [SYNC_DATE]=@SyncDate WHERE [ID_REFERENCE]=@Barcode";
+        private const string _updateRefSyncError    = "UPDATE [dbo].[References] set SYNC=-2, [SYNC_DATE]=@SyncDate WHERE [ID_REFERENCE]=@Barcode";
         public SynchronizeArticlesWorker(ILogger<SynchronizeArticlesWorker> logger, IConfiguration configuration, IServiceProvider services)
             : base(logger, configuration)
         {
@@ -41,6 +40,9 @@ namespace LaComarca.Plugin.Workers
         }
         protected override async Task DoWorkAsync(CancellationToken token = default)
         {
+            List<string> SuccessArticleList = new List<string>();
+            List<string> ErrorArticleList = new List<string>();
+
             await using var uow  = _services.GetRequiredService<IUnitOfWork>();
             using (SqlConnection connection = new SqlConnection(_connString))
             {
@@ -52,49 +54,70 @@ namespace LaComarca.Plugin.Workers
                     {
                         while (reader.Read())
                         {
-                            Ref = new ReferenceData();
-                            Ref.Id_Reference = reader.GetString(0);
-                            Ref.Description = reader.GetString(1);
-                            Ref.Rotation_Class = reader.GetInt32(2);
-                            Ref.SYNC = reader.GetInt32(3);
-                            Ref.SYNC_Date = reader.GetString(4);
-                            Ref.Floor_Selection = reader.GetInt32(5);
-
-                            var Art = new Article
-                            (
-                                0,
-                                Ref.Id_Reference,
-                                Ref.Description,
-                                null,
-                                null,
-                                null,
-                                null,
-                                null
-                            );
-
-                            var result= uow.ArticleRepository.AddOrUpdateAsync(Art, token);
-                            if (result is null)
+                            try
                             {
-                                //sync=-2
-                                using (SqlCommand cmd2 = new SqlCommand(_updateRefSyncError, connection))
+                                Ref = new ReferenceData();
+                                Ref.Id_Reference = reader.GetString(0);
+                                Ref.Description = reader.GetString(1);
+                                if (!reader.IsDBNull(2))
+                                    Ref.Rotation_Class = reader.GetInt32(2);
+                                if (!reader.IsDBNull(5))
+                                    Ref.Floor_Selection = reader.GetInt32(5);
+
+                                var Art = new Article
+                                (
+                                    0,
+                                    Ref.Id_Reference,
+                                    Ref.Description,
+                                    null,
+                                    null,
+                                    null,
+                                    null,
+                                    null
+                                );
+
+                                var result = uow.ArticleRepository.AddOrUpdateAsync(Art, token);
+                                if (result is null)
                                 {
-                                    cmd2.Parameters.AddWithValue("@Barcode", Ref.Id_Reference);
+                                    //Aggiungo alla lista di articoli che avranno sync=-2
+                                    ErrorArticleList.Add(Ref.Id_Reference);
                                 }
-                                await connection.CloseAsync();
-                            }
-                            else
-                            {
-                                //sync=2
-                                using (SqlCommand cmd2 = new SqlCommand(_updateRefSyncCorrect, connection))
+                                else
                                 {
-                                    cmd2.Parameters.AddWithValue("@Barcode", Ref.Id_Reference);
+                                    //Aggiungo alla lista di articoli che avranno sync=2
+                                    SuccessArticleList.Add(Ref.Id_Reference);
                                 }
                             }
-                                await connection.CloseAsync();
+                            catch(Exception ex)
+                            {
+                                _log.LogError(ex.Message);
+                                ErrorArticleList.Add(Ref.Id_Reference);
+                            }
                         }
                     }
-                }              
-                await connection.CloseAsync();
+                }
+                if(SuccessArticleList.Count()>0)
+                    foreach (string a in SuccessArticleList)
+                    {
+                        using (SqlCommand cmd = new SqlCommand(_updateRefSyncCorrect, connection))
+                        {
+                            cmd.Parameters.AddWithValue("@Barcode", a);
+                            cmd.Parameters.AddWithValue("@SyncDate", DateTime.Now);
+                            cmd.ExecuteNonQuery();
+                        }
+                    }
+
+                if (ErrorArticleList.Count() > 0)
+                    foreach (string s in ErrorArticleList)
+                    {
+                        using (SqlCommand cmd2 = new SqlCommand(_updateRefSyncError, connection))
+                        {
+                            cmd2.Parameters.AddWithValue("@Barcode", s);
+                            cmd2.Parameters.AddWithValue("@SyncDate", DateTime.Now);
+                            cmd2.ExecuteNonQuery();
+                        }
+                    }
+                    await connection.CloseAsync();
             }
         }
     }

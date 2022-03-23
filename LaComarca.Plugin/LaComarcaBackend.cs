@@ -70,6 +70,39 @@ namespace LaComarca.Plugin
             }
         }
 
+        public async Task<ResultData> UnLockComarca(int partitionId, ILoggedUser user, CancellationToken token = default)
+        {
+            await Task.Yield();
+            _log.LogWarning($"User: {user.DisplayName} wants to Unlock partitionId:{partitionId}");
+
+            try
+            {
+                var partition = _plant.Partitions.Single(p => p.Id == partitionId);
+
+                if (partition.GetItemType() == ItemType.PeakMover)
+                {
+                    var partitions = partition.LocatedIn.LocatedIn.SubItems.SelectMany(p => p.Partitions);
+                    foreach (var p in partitions)
+                    {
+                        _plant.LockUnlockPartition(partition.Id, false, false,"");
+                        VerifyGroupToLockUnLock(partitionId, false);
+                    }
+                }
+                else
+                {
+                    _plant.LockUnlockPartition(partition.Id, false, false,"");
+                    VerifyGroupToLockUnLock(partitionId, false);
+                }
+
+                return ResultData.Ok();
+            }
+            catch (Exception ex)
+            {
+                _log.LogError(ex.ToString());
+                return ResultData.FromException(ex);
+            }
+        }
+
         private void LockUnLockGroup(int groupId, bool lockFlag)
         {
             var group = _plant.LinkGroups.Single(x => x.Id == groupId);

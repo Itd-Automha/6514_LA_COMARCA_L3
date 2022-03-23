@@ -1,0 +1,12 @@
+D:\Sviluppo_Automha\6514_LA_COMARCA_L3\LaComarca.Plugin\obj\Debug\net5.0\LaComarca.Plugin.GeneratedMSBuildEditorConfig.editorconfig
+D:\Sviluppo_Automha\6514_LA_COMARCA_L3\LaComarca.Plugin\obj\Debug\net5.0\LaComarca.Plugin.AssemblyInfoInputs.cache
+D:\Sviluppo_Automha\6514_LA_COMARCA_L3\LaComarca.Plugin\obj\Debug\net5.0\LaComarca.Plugin.AssemblyInfo.cs
+D:\Sviluppo_Automha\6514_LA_COMARCA_L3\LaComarca.Plugin\obj\Debug\net5.0\LaComarca.Plugin.csproj.CoreCompileInputs.cache
+D:\Sviluppo_Automha\6514_LA_COMARCA_L3\LaComarca.Plugin\bin\Debug\net5.0\LaComarca.Plugin.deps.json
+D:\Sviluppo_Automha\6514_LA_COMARCA_L3\LaComarca.Plugin\bin\Debug\net5.0\LaComarca.Plugin.dll
+D:\Sviluppo_Automha\6514_LA_COMARCA_L3\LaComarca.Plugin\bin\Debug\net5.0\ref\LaComarca.Plugin.dll
+D:\Sviluppo_Automha\6514_LA_COMARCA_L3\LaComarca.Plugin\bin\Debug\net5.0\LaComarca.Plugin.pdb
+D:\Sviluppo_Automha\6514_LA_COMARCA_L3\LaComarca.Plugin\obj\Debug\net5.0\LaComarca.Plugin.dll
+D:\Sviluppo_Automha\6514_LA_COMARCA_L3\LaComarca.Plugin\obj\Debug\net5.0\ref\LaComarca.Plugin.dll
+D:\Sviluppo_Automha\6514_LA_COMARCA_L3\LaComarca.Plugin\obj\Debug\net5.0\LaComarca.Plugin.pdb
+D:\Sviluppo_Automha\6514_LA_COMARCA_L3\LaComarca.Plugin\obj\Debug\net5.0\LaComarca.Plugin.csproj.AssemblyReference.cache
