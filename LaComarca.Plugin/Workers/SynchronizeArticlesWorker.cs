@@ -40,13 +40,10 @@ namespace LaComarca.Plugin.Workers
         }
         protected override async Task DoWorkAsync(CancellationToken token = default)
         {
-            List<string> SuccessArticleList = new List<string>();
-            List<string> ErrorArticleList = new List<string>();
 
-            await using var uow  = _services.GetRequiredService<IUnitOfWork>();
             using (SqlConnection connection = new SqlConnection(_connString))
             {
-                ReferenceData? Ref = null;
+               ReferenceData? Ref = null;
                await connection.OpenAsync(token);
                 using (SqlCommand cmd = new SqlCommand(_getReferencesSync1, connection))
                 {
@@ -76,49 +73,82 @@ namespace LaComarca.Plugin.Workers
                                     null
                                 );
 
-                                var result = uow.ArticleRepository.AddOrUpdateAsync(Art, token);
+                                int? result = null;
+                                if (!string.IsNullOrEmpty(Art.Description))
+                                {
+                                    result = await AddOrUpdateArticle(Art, token);
+                                }
+
                                 if (result is null)
                                 {
                                     //Aggiungo alla lista di articoli che avranno sync=-2
-                                    ErrorArticleList.Add(Ref.Id_Reference);
+                                    using (SqlCommand cmd2 = new SqlCommand(_updateRefSyncError, connection))
+                                    {
+                                        cmd2.Parameters.AddWithValue("@Barcode", Ref.Id_Reference);
+                                        cmd2.Parameters.AddWithValue("@SyncDate", DateTime.Now);
+                                        cmd2.ExecuteNonQuery();
+                                    }
+                                    _log.LogDebug("Error on article: " + Ref.Id_Reference);
                                 }
                                 else
                                 {
                                     //Aggiungo alla lista di articoli che avranno sync=2
-                                    SuccessArticleList.Add(Ref.Id_Reference);
+                                    using (SqlCommand cmd2 = new SqlCommand(_updateRefSyncCorrect, connection))
+                                    {
+                                        cmd2.Parameters.AddWithValue("@Barcode", Ref.Id_Reference);
+                                        cmd2.Parameters.AddWithValue("@SyncDate", DateTime.Now);
+                                        cmd2.ExecuteNonQuery();
+                                    }
+
+                                    _log.LogDebug("Added article: " + Ref.Id_Reference);
                                 }
                             }
                             catch(Exception ex)
                             {
+                                using (SqlCommand cmd2 = new SqlCommand(_updateRefSyncError, connection))
+                                {
+                                    cmd2.Parameters.AddWithValue("@Barcode", Ref.Id_Reference);
+                                    cmd2.Parameters.AddWithValue("@SyncDate", DateTime.Now);
+                                    cmd2.ExecuteNonQuery();
+                                }
                                 _log.LogError(ex.Message);
-                                ErrorArticleList.Add(Ref.Id_Reference);
                             }
                         }
                     }
                 }
-                if(SuccessArticleList.Count()>0)
-                    foreach (string a in SuccessArticleList)
-                    {
-                        using (SqlCommand cmd = new SqlCommand(_updateRefSyncCorrect, connection))
-                        {
-                            cmd.Parameters.AddWithValue("@Barcode", a);
-                            cmd.Parameters.AddWithValue("@SyncDate", DateTime.Now);
-                            cmd.ExecuteNonQuery();
-                        }
-                    }
-
-                if (ErrorArticleList.Count() > 0)
-                    foreach (string s in ErrorArticleList)
-                    {
-                        using (SqlCommand cmd2 = new SqlCommand(_updateRefSyncError, connection))
-                        {
-                            cmd2.Parameters.AddWithValue("@Barcode", s);
-                            cmd2.Parameters.AddWithValue("@SyncDate", DateTime.Now);
-                            cmd2.ExecuteNonQuery();
-                        }
-                    }
                     await connection.CloseAsync();
             }
+        }
+
+        private async Task<int?> AddOrUpdateArticle(Article A, CancellationToken token = default) 
+        {
+            try
+            {
+                await using var uow = _services.GetRequiredService<IUnitOfWork>();
+                var Art = await uow.ArticleRepository.GetAsync(A.Code, token);
+                if (Art is null)
+                {
+                    await uow.ArticleRepository.AddAsync(A, token);
+                }
+                else
+                {
+                    Art = Art with
+                    {
+                        Description = A.Description
+                    };
+                    await uow.ArticleRepository.UpdateAsync(Art);
+                }
+
+                await uow.SaveChangesAsync(token);
+
+                return Art?.Id;
+            }
+            catch (Exception ex) 
+            {
+                _log.LogError(ex.Message);
+                return null;
+            }
+           
         }
     }
 }

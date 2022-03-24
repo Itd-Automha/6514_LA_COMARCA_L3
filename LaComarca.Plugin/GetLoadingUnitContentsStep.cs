@@ -56,11 +56,11 @@ namespace LaComarca.Plugin
         private const string _getReference = _getReferences + "WHERE Id_Reference = @Article";
 
         private const string _updateLuSyncCorrect = "UPDATE Lu_Bill set SYNC=3 WHERE SSCC=@Barcode";
-        private const string _updateRefSyncCorrect = "UPDATE References set SYNC=2 WHERE SSCC=@Barcode";
-        private const string _updateRefSyncError = "UPDATE References set SYNC=-2 WHERE SSCC=@Barcode";
+        private const string _updateRefSyncCorrect = "UPDATE [dbo].[References] set SYNC=2, [SYNC_DATE]=@SyncDate WHERE [ID_REFERENCE]=@Barcode";
+        private const string _updateRefSyncError = "UPDATE [dbo].[References] set SYNC=-2, [SYNC_DATE]=@SyncDate WHERE [ID_REFERENCE]=@Barcode";
 
 
-        private const string _ConnectionString = "Data Source=.\\SQLEXPRESS;Integrated Security=true;Connect Timeout=30;Initial Catalog=LA_COMARCA_L3; user id=sa;password=Cst03211030162;Persist Security Info=False;";
+        private const string _ConnectionString = "Data Source=.\\SQLEXPRESS;Integrated Security=true;Connect Timeout=30;Initial Catalog=LA_COMARCA_L3; user id=sa;password=Cst03211030162;Persist Security Info=False;MultipleActiveResultSets=True";
         #endregion
 
 
@@ -187,7 +187,7 @@ namespace LaComarca.Plugin
 
                 await SaveContentsAsync(LuBills , token);
 
-                //metto sync = 2 su lu_bill
+                //metto sync = 3 su lu_bill
                 if (!_errors.Any())
                 {
                     using (SqlConnection connection = new SqlConnection(_ConnectionString))
@@ -270,8 +270,6 @@ namespace LaComarca.Plugin
 
             }
             await uow.SaveChangesAsync(token);
-
-           
         }
 
         private static async Task<Batch?> GetBatch(List<LoadingUnitContentData> Data, IUnitOfWork uow, LoadingUnitContentData item, Article? article, CancellationToken token)
@@ -335,6 +333,7 @@ namespace LaComarca.Plugin
                                 using (SqlCommand cmd = new SqlCommand(_updateRefSyncError, connection))
                                 {
                                     cmd.Parameters.AddWithValue("@Barcode", referenceId);
+                                    cmd.Parameters.AddWithValue("@SyncDate", DateTime.Now);
                                     cmd.ExecuteNonQuery();
                                 }
                                 await connection.CloseAsync();
@@ -351,7 +350,7 @@ namespace LaComarca.Plugin
                            null,
                            null
                        );
-                        var result = await uow.ArticleRepository.AddOrUpdateAsync(Art, token);
+                        var result = await uow.ArticleRepository.AddAsync(Art, token);
                         await uow.SaveChangesAsync();
 
                         if (result is not null)
@@ -363,6 +362,7 @@ namespace LaComarca.Plugin
                                 using (SqlCommand cmd = new SqlCommand(_updateRefSyncCorrect, connection))
                                 {
                                     cmd.Parameters.AddWithValue("@Barcode", referenceId);
+                                    cmd.Parameters.AddWithValue("@SyncDate", DateTime.Now);
                                     cmd.ExecuteNonQuery();
                                 }
                                 await connection.CloseAsync();
@@ -378,6 +378,7 @@ namespace LaComarca.Plugin
                                 using (SqlCommand cmd = new SqlCommand(_updateRefSyncError, connection))
                                 {
                                     cmd.Parameters.AddWithValue("@Barcode", referenceId);
+                                    cmd.Parameters.AddWithValue("@SyncDate", DateTime.Now);
                                     cmd.ExecuteNonQuery();
                                 }
                                 await connection.CloseAsync();
