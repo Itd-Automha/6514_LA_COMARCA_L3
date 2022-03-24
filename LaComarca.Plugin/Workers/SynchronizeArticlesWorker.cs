@@ -30,8 +30,8 @@ namespace LaComarca.Plugin.Workers
                                                    "FROM[LA_COMARCA_L3].[dbo].[References]"+
                                                    "WHERE SYNC=1";
 
-        private const string _updateRefSyncCorrect  = "UPDATE [dbo].[References] set SYNC=2, [SYNC_DATE]=@SyncDate WHERE [ID_REFERENCE]=@Barcode";
-        private const string _updateRefSyncError    = "UPDATE [dbo].[References] set SYNC=-2, [SYNC_DATE]=@SyncDate WHERE [ID_REFERENCE]=@Barcode";
+        private const string _updateRefSyncCorrect  = "UPDATE [dbo].[References] set SYNC=2, [SYNC_DATE]=GETDATE() WHERE [ID_REFERENCE]=@Barcode";
+        private const string _updateRefSyncError    = "UPDATE [dbo].[References] set SYNC=-2, [SYNC_DATE]=GETDATE() WHERE [ID_REFERENCE]=@Barcode";
         public SynchronizeArticlesWorker(ILogger<SynchronizeArticlesWorker> logger, IConfiguration configuration, IServiceProvider services)
             : base(logger, configuration)
         {

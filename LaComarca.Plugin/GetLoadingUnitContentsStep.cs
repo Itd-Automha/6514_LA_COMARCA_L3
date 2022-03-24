@@ -56,8 +56,8 @@ namespace LaComarca.Plugin
         private const string _getReference = _getReferences + "WHERE Id_Reference = @Article";
 
         private const string _updateLuSyncCorrect = "UPDATE Lu_Bill set SYNC=3 WHERE SSCC=@Barcode";
-        private const string _updateRefSyncCorrect = "UPDATE [dbo].[References] set SYNC=2, [SYNC_DATE]=@SyncDate WHERE [ID_REFERENCE]=@Barcode";
-        private const string _updateRefSyncError = "UPDATE [dbo].[References] set SYNC=-2, [SYNC_DATE]=@SyncDate WHERE [ID_REFERENCE]=@Barcode";
+        private const string _updateRefSyncCorrect = "UPDATE [dbo].[References] set SYNC=2, [SYNC_DATE]=GETDATE() WHERE [ID_REFERENCE]=@Barcode";
+        private const string _updateRefSyncError = "UPDATE [dbo].[References] set SYNC=-2, [SYNC_DATE]=GETDATE() WHERE [ID_REFERENCE]=@Barcode";
 
 
         private const string _ConnectionString = "Data Source=.\\SQLEXPRESS;Integrated Security=true;Connect Timeout=30;Initial Catalog=LA_COMARCA_L3; user id=sa;password=Cst03211030162;Persist Security Info=False;MultipleActiveResultSets=True";
@@ -174,10 +174,8 @@ namespace LaComarca.Plugin
                                 LuData.Id_reference = reader.GetString(2);
                                 LuData.QT = reader.GetDecimal(3);
                                 LuData.batch = reader.GetString(4);
-                                LuData.Expiry_Date = reader.GetString(5);
-                                LuData.SYNC = reader.GetInt16(6);
-                                LuData.SYNC_Date = reader.GetString(7);
-
+                                if (!reader.IsDBNull(5))
+                                    LuData.Expiry_Date = reader.GetDateTime(5);
                                 LuBills.Add(LuData);
                             }
                         }
@@ -232,15 +230,10 @@ namespace LaComarca.Plugin
 
                 var _cultureIfoIt = CultureInfo.GetCultureInfo("it-IT");
 
-                DateTime? expirationDate = null;
-                if (!string.IsNullOrEmpty(item.Expiry_Date))
+
+                if (item.Expiry_Date is null)
                 {
-                    if (!DateTime.TryParse(item.Expiry_Date, _cultureIfoIt, DateTimeStyles.None, out var parsedDtScadenza))
-                    {
-                        _errors.Add("DtIngresso", "Formato data scadenza non valido:  " + item.Expiry_Date);
-                        break;
-                    }
-                    else expirationDate = parsedDtScadenza;
+                    _errors.Add("Scadenza", "Data scadenza non valida");
                 }
 
                 Batch? batch = await GetBatch(Data, uow, item, article, token);
@@ -254,7 +247,7 @@ namespace LaComarca.Plugin
                     item.QT,
                     DateTime.Now,
                     null,
-                    expirationDate,
+                    item.Expiry_Date,
                     batch?.Id,
                     batch?.Id,
                     null,
@@ -324,7 +317,6 @@ namespace LaComarca.Plugin
                         if (string.IsNullOrEmpty(Ref.Description))
                         {
                             _errors.Add("Articolo", "Descrizione articolo non valida:  " + referenceId);
-                            return null;
                             //update sync -2
 
                             using (SqlConnection Conn = new SqlConnection(_ConnectionString))
@@ -333,23 +325,23 @@ namespace LaComarca.Plugin
                                 using (SqlCommand cmd = new SqlCommand(_updateRefSyncError, connection))
                                 {
                                     cmd.Parameters.AddWithValue("@Barcode", referenceId);
-                                    cmd.Parameters.AddWithValue("@SyncDate", DateTime.Now);
                                     cmd.ExecuteNonQuery();
                                 }
                                 await connection.CloseAsync();
                             }
+                            return null;
                         }
                         var Art = new Article
-                       (
-                           0,
-                           Ref.Id_Reference,
-                           Ref.Description,
-                           null,
-                           null,
-                           null,
-                           null,
-                           null
-                       );
+                        (
+                            0,
+                            Ref.Id_Reference,
+                            Ref.Description,
+                            null,
+                            null,
+                            null,
+                            null,
+                            null
+                        );
                         var result = await uow.ArticleRepository.AddAsync(Art, token);
                         await uow.SaveChangesAsync();
 
@@ -362,7 +354,6 @@ namespace LaComarca.Plugin
                                 using (SqlCommand cmd = new SqlCommand(_updateRefSyncCorrect, connection))
                                 {
                                     cmd.Parameters.AddWithValue("@Barcode", referenceId);
-                                    cmd.Parameters.AddWithValue("@SyncDate", DateTime.Now);
                                     cmd.ExecuteNonQuery();
                                 }
                                 await connection.CloseAsync();
@@ -378,7 +369,6 @@ namespace LaComarca.Plugin
                                 using (SqlCommand cmd = new SqlCommand(_updateRefSyncError, connection))
                                 {
                                     cmd.Parameters.AddWithValue("@Barcode", referenceId);
-                                    cmd.Parameters.AddWithValue("@SyncDate", DateTime.Now);
                                     cmd.ExecuteNonQuery();
                                 }
                                 await connection.CloseAsync();

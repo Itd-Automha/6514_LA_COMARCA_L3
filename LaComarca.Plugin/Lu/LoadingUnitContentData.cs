@@ -13,7 +13,7 @@ namespace LaComarca.Plugin.Lu
         public string Id_reference { get; set; }        //sku id
         public decimal QT { get; set; }
         public string batch { get; set; }
-        public string Expiry_Date { get; set; }
+        public DateTime? Expiry_Date { get; set; }
         public int SYNC { get; set; }
         public string SYNC_Date { get; set; }
 
