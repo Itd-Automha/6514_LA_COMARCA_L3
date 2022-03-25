@@ -53,25 +53,33 @@ namespace LaComarca.Plugin.Workers
                         {
                             try
                             {
+                                char? RotationClass = null;
                                 Ref = new ReferenceData();
                                 Ref.Id_Reference = reader.GetString(0);
                                 Ref.Description = reader.GetString(1);
                                 if (!reader.IsDBNull(2))
-                                    Ref.Rotation_Class = reader.GetInt32(2);
+                                    Ref.Rotation_Class = reader.GetInt16(2);
                                 if (!reader.IsDBNull(5))
                                     Ref.Floor_Selection = reader.GetInt32(5);
 
-                                var Art = new Article
-                                (
-                                    0,
-                                    Ref.Id_Reference,
-                                    Ref.Description,
-                                    null,
-                                    null,
-                                    null,
-                                    null,
-                                    null
-                                );
+                                if (Ref.Rotation_Class == 0)
+                                    RotationClass = 'A';
+                                else if (Ref.Rotation_Class == 1)
+                                    RotationClass = 'B';
+                                else
+                                    RotationClass = null;
+
+                                    var Art = new Article
+                                    (
+                                        0,
+                                        Ref.Id_Reference,
+                                        Ref.Description,
+                                        null,
+                                        null,
+                                        null,
+                                        null,
+                                        RotationClass
+                                    );
 
                                 int? result = null;
                                 if (!string.IsNullOrEmpty(Art.Description))
@@ -128,13 +136,14 @@ namespace LaComarca.Plugin.Workers
                 var Art = await uow.ArticleRepository.GetAsync(A.Code, token);
                 if (Art is null)
                 {
-                    await uow.ArticleRepository.AddAsync(A, token);
+                    Art = await uow.ArticleRepository.AddAsync(A, token);
                 }
                 else
                 {
                     Art = Art with
                     {
-                        Description = A.Description
+                        Description = A.Description,
+                        RotationIndex=A.RotationIndex
                     };
                     await uow.ArticleRepository.UpdateAsync(Art);
                 }
